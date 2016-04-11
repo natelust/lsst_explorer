@@ -9,7 +9,7 @@ from .catalog_view import catalog_view
 
 from lsst.daf.persistence.butler import Butler
 
-@hasCommands("displayExposure", "displayCatalog")
+@hasCommands("displayLsstExposure", "displayLsstCatalog", "displayLsstMaskedImage", "displayLsstImage")
 class lsst_explorer(QWidget, Ui_lsst_explorer):
     def __init__(self, main, parent=None):
         QWidget.__init__(self, parent=parent)
@@ -28,32 +28,46 @@ class lsst_explorer(QWidget, Ui_lsst_explorer):
         self.butler = Butler(self.inputRepository)
         exposure = self.butler.get(self.imageType, self.dataId)
         try:
-            self.displayExposure(exposure)
+            self.displayLsstExposure(exposure)
         except:
             pass
         
         if self.catalogType:
             try:
                 catalog = self.butler.get(self.catalogType, self.dataId)
-                self.displayCatalog(catalog, hasImage=True)
+                self.displayLsstCatalog(catalog, hasImage=True)
             except:
                 pass
 
-    def displayCatalog(self, catalog, hasImage=False):
+    def displayLsstCatalog(self, catalog, hasImage=False):
         self.catalog = catalog
         self.catalogView = catalog_view(catalog, self.main, hasImage)
 
-    def displayExposure(self, exp):
+    def displayLsstExposure(self, exp):
         self.exposure = exp
         self.mi = exp.getMaskedImage()
-        # Display the image in the main window
-        self.imageArray = self.mi.getImage().getArray()
+        self.displayLsstMaskedImage(self.mi)
+        # If the exposure has a wcs set it
+        if exp.hasWcs():
+            wcs = {a:b for a,b,c in exp.getWcs().getFitsMetadata().toList()}
+            self.main.wcs = astroWcs.WCS(wcs)
+
+    def displayLsstMaskedImage(self, maskedImage):
+        self.displayLsstImage(maskedImage.getImage())
+        self.DrawMasks(maskedImage.getMask())
+
+    def displayLsstImage(self, image):
+        self.imageArray = image.getArray()
         self.main.image = self.imageArray
         self.main.head = None
-        # Generate colors for the mask planes:
-        self.maskPlaneDict = self.exposure.getMaskedImage().getMask().getMaskPlaneDict()
+        self.main.funloaded = 1
+        self.main.setup_image_info()
+
+    def DrawMasks(self, mask):
+        # Seperate out displaying the mask incase it must be called again
+        self.maskPlaneDict = mask.getMaskPlaneDict()
         self.maskPlaneDictKeys = self.maskPlaneDict.keys()
-        self.mask = self.mi.getMask().getArray()
+        self.mask = mask.getArray()
         self.bitMask = np.zeros(list(self.imageArray.shape)+[4],dtype=float)
         self.maskColors = {}
         for key in self.maskPlaneDictKeys:
@@ -62,14 +76,6 @@ class lsst_explorer(QWidget, Ui_lsst_explorer):
             submask = np.bitwise_and(self.mask, 2**self.maskPlaneDict[key])
             subindex = np.where(submask)
             self.bitMask[subindex] += cmap
-        self.main.setup_image_info()
-        self.DrawMasks()
-        # If the exposure has a wcs set it
-        if exp.hasWcs():
-            wcs = {a:b for a,b,c in exp.getWcs().getFitsMetadata().toList()}
-            self.main.wcs = astroWcs.WCS(wcs)
 
-    def DrawMasks(self):
-        # Seperate out displaying the mask incase it must be called again
         self.main.imshow.canvas.ax.imshow(self.bitMask)
         self.main.imshow.canvas.draw()
