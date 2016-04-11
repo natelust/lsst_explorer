@@ -4,6 +4,6 @@
 "module":"lsst_explorer",
 "url":"https://github.com/natelust/lsst_explorer/archive/master.zip",
 "description":"Allows display of lsst exposures and catalogs",
-"version":0.1,
+"version":0.2,
 "ntv_version":0.4
 }
