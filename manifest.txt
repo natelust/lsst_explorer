@@ -1,0 +1,9 @@
+{"type":"addon",
+"name":"Lsst Explorer",
+"persistent":"False",
+"module":"lsst_explorer",
+"url":"N/A",
+"description":"Allows display of lsst exposures and catalogs",
+"version":0.1,
+"ntv_version":0.4
+}
