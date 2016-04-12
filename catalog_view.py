@@ -54,14 +54,46 @@ class catalog_view(QDialog):
         inputLayout.addWidget(self.lineButton)
         self.inputWidget.setLayout(inputLayout)
 
+        self.selectWidget = QWidget()
+        msg = "Click button enable selecting record from image, will fail if no unique record found"
+        self.selectLabel = QLabel(msg)
+        self.selectButton = QPushButton("Go")
+        self.selectWidthLabel = QLabel("Enter width in pixels to concider")
+        self.selectLineEdit = QLineEdit("5")
+        selectLayout = QVBoxLayout(self)
+        selectLayout.addWidget(self.selectLabel)
+        selectLayout.addWidget(self.selectWidthLabel)
+        selectLayout.addWidget(self.selectLineEdit)
+        selectLayout.addWidget(self.selectButton)
+        self.selectWidget.setLayout(selectLayout)
+        self.selectButton.clicked.connect(self.getClick)
+
         layout = QVBoxLayout(self)
         layout.addWidget(self.tableView)
         layout.addWidget(self.inputWidget)
+        layout.addWidget(self.selectWidget)
         self.setLayout(layout)
+
+        # Generate the mapping
+        self.xdict = {}
+        self.ydict = {}
+        for i in range(len(catalog)):
+            x = int(catalog[i].getX())
+            y = int(catalog[i].getY())
+            if x not in self.xdict:
+                self.xdict[x] = set()
+            self.xdict[x].add(i)
+            if y not in self.ydict:
+                self.ydict[y] = set()
+            self.ydict[y].add(i)
 
         self.tableView.setSelectionBehavior(QTableView.SelectRows)
         self.tableView.doubleClicked.connect(self.viewRecord)
         self.show()
+
+    def getClick(self):
+        if self.hasImage:
+            self.main.connectclick(self.tableLookup)
 
     def goto(self):
         number = int(self.lineNumber.text())
@@ -81,4 +113,36 @@ class catalog_view(QDialog):
             extents = (yRange, xRange)
             self.main.set_extents(extents)
             self.main.update_canvas()
-        
+    
+    def tableLookup(self,event):
+        x = int(event.xdata)
+        y = int(event.ydata)
+
+        span = int(self.selectLineEdit.text())
+
+        yRange = range(y-span,y+span+1)
+        xRange = range(x-span,x+span+1)
+
+        ySetCollection = []
+        xSetCollection = []
+        for i in range(len(yRange)):
+            if yRange[i] in self.ydict:
+                ySetCollection.append(self.ydict[yRange[i]])
+            if xRange[i] in self.xdict:
+                xSetCollection.append(self.xdict[xRange[i]])
+
+        if len(ySetCollection) == 0 or len(xSetCollection) == 0:
+            return
+        ySet = set()
+        xSet = set()
+        for s in ySetCollection:
+            ySet = s | ySet
+        for s in xSetCollection:
+            xSet = s | xSet 
+
+        result = ySet & xSet
+
+        if len(result) == 1:
+            self.tableView.selectRow(list(result)[0])
+        else:
+            return
