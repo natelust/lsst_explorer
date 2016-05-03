@@ -68,14 +68,11 @@ class lsst_explorer(QWidget, Ui_lsst_explorer):
         self.maskPlaneDict = mask.getMaskPlaneDict()
         self.maskPlaneDictKeys = self.maskPlaneDict.keys()
         self.mask = mask.getArray()
-        self.bitMask = np.zeros(list(self.imageArray.shape)+[4],dtype=float)
-        self.maskColors = {}
+        tmask = []
+        tkeys = []
         for key in self.maskPlaneDictKeys:
-            cmap = np.random.uniform(0,1,3).tolist()+[0.35]
-            self.maskColors[key] = cmap
             submask = np.bitwise_and(self.mask, 2**self.maskPlaneDict[key])
-            subindex = np.where(submask)
-            self.bitMask[subindex] += cmap
-
-        self.main.imshow.canvas.ax.imshow(self.bitMask)
-        self.main.imshow.canvas.draw()
+            tmask.append(submask)
+            tkeys.append(key)
+        self.main.clear_mask()
+        self.main.add_mask(tmask, tkeys)
