@@ -1,13 +1,14 @@
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 
+
 class LsstQtable(QAbstractTableModel):
-    def __init__(self,catalog, parent=None):
-        QAbstractTableModel.__init__(self,parent)
+    def __init__(self, catalog, parent=None):
+        QAbstractTableModel.__init__(self, parent)
         self.catalog = catalog
         self.keys = self.catalog.schema.getNames()
 
-    def rowCount(self,parent):
+    def rowCount(self, parent):
         return len(self.catalog)
 
     def columnCount(self, parent):
@@ -30,6 +31,7 @@ class LsstQtable(QAbstractTableModel):
 
     def flags(self, index):
         return Qt.ItemIsEnabled | Qt.ItemIsSelectable
+
 
 class catalog_view(QDialog):
     def __init__(self, catalog, main, hasImage=False, parent=None):
@@ -105,7 +107,6 @@ class catalog_view(QDialog):
             row = index.row()
             record = self.catalog[row]
             footprint = record.getFootprint().getBBox()
-            #import pdb;pdb.set_trace()
             xRange = (footprint.getBeginX()-10, footprint.getMaxX()+10)
             yRange = (footprint.getBeginY()-10, footprint.getMaxY()+10)
             if self.main.orig != 'lower':
@@ -113,15 +114,15 @@ class catalog_view(QDialog):
             extents = (yRange, xRange)
             self.main.set_extents(extents)
             self.main.update_canvas()
-    
-    def tableLookup(self,event):
+
+    def tableLookup(self, event):
         x = int(event.xdata)
         y = int(event.ydata)
 
         span = int(self.selectLineEdit.text())
 
-        yRange = range(y-span,y+span+1)
-        xRange = range(x-span,x+span+1)
+        yRange = range(y-span, y+span+1)
+        xRange = range(x-span, x+span+1)
 
         ySetCollection = []
         xSetCollection = []
@@ -138,7 +139,7 @@ class catalog_view(QDialog):
         for s in ySetCollection:
             ySet = s | ySet
         for s in xSetCollection:
-            xSet = s | xSet 
+            xSet = s | xSet
 
         result = ySet & xSet
 
