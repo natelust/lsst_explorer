@@ -1,5 +1,6 @@
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
+import re
 
 class LsstQtable(QAbstractTableModel):
     def __init__(self, catalog, parent=None):
@@ -122,7 +123,8 @@ class catalog_view(QDialog):
 
     def updateTable(self, state):
         sender = self.sender()
-        columNumber = self.schemaEnum[str(sender.text())]
+        number = re.compile('\d*[:][ ](.*)').findall(str(sender.text()))[0]
+        columNumber = self.schemaEnum[number]
         if state:
             self.tableView.showColumn(columNumber)
         else:
