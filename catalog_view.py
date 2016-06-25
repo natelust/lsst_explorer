@@ -1,7 +1,6 @@
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 
-
 class LsstQtable(QAbstractTableModel):
     def __init__(self, catalog, parent=None):
         QAbstractTableModel.__init__(self, parent)
@@ -43,6 +42,28 @@ class catalog_view(QDialog):
         self.qCatalog = LsstQtable(catalog)
         self.tableView = QTableView()
         self.tableView.setModel(self.qCatalog)
+        self.schemaEnum = {name: i for i, name in
+                           enumerate(catalog.schema.getNames())}
+
+        # Add in checkboxes for all the table columns
+        self.checkboxWidget = QWidget()
+        self.checkboxWidget.setMaximumWidth(500)
+        checkboxLayout = QVBoxLayout(self)
+        allCheckButton = QCheckBox('All')
+        allCheckButton.setChecked(True)
+        allCheckButton.stateChanged.connect(self.updateTableAll)
+        checkboxLayout.addWidget(allCheckButton)
+        self.checkButtons = []
+        for i, name in enumerate(self.catalog.schema.getNames()):
+            tmp = QCheckBox("{}: {}".format(i, name))
+            tmp.setChecked(True)
+            tmp.stateChanged.connect(self.updateTable)
+            checkboxLayout.addWidget(tmp)
+            self.checkButtons.append(tmp)
+        self.checkboxWidget.setLayout(checkboxLayout)
+        self.scroller = QScrollArea()
+        self.scroller.setWidget(self.checkboxWidget)
+        self.scroller.setWidgetResizable(True)
 
         self.inputWidget = QWidget()
         inputLayout = QHBoxLayout(self)
@@ -57,7 +78,8 @@ class catalog_view(QDialog):
         self.inputWidget.setLayout(inputLayout)
 
         self.selectWidget = QWidget()
-        msg = "Click button enable selecting record from image, will fail if no unique record found"
+        msg = "Click button enable selecting record from image,"\
+              " will fail if no unique record found"
         self.selectLabel = QLabel(msg)
         self.selectButton = QPushButton("Go")
         self.selectWidthLabel = QLabel("Enter width in pixels to concider")
@@ -72,6 +94,7 @@ class catalog_view(QDialog):
 
         layout = QVBoxLayout(self)
         layout.addWidget(self.tableView)
+        layout.addWidget(self.scroller)
         layout.addWidget(self.inputWidget)
         layout.addWidget(self.selectWidget)
         self.setLayout(layout)
@@ -92,6 +115,18 @@ class catalog_view(QDialog):
         self.tableView.setSelectionBehavior(QTableView.SelectRows)
         self.tableView.doubleClicked.connect(self.viewRecord)
         self.show()
+
+    def updateTableAll(self, state):
+        for box in self.checkButtons:
+            box.setChecked(state)
+
+    def updateTable(self, state):
+        sender = self.sender()
+        columNumber = self.schemaEnum[str(sender.text())]
+        if state:
+            self.tableView.showColumn(columNumber)
+        else:
+            self.tableView.hideColumn(columNumber)
 
     def getClick(self):
         if self.hasImage:
