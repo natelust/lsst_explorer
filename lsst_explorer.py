@@ -12,7 +12,7 @@ from lsst.daf.persistence.butler import Butler
 @hasCommands("displayLsstExposure", "displayLsstCatalog", "displayLsstMaskedImage", "displayLsstImage")
 class lsst_explorer(QWidget, Ui_lsst_explorer):
     def __init__(self, main, parent=None):
-        QWidget.__init__(self, parent=parent)
+        QWidget.__init__(self)
         self.setupUi(self)
         self.main = main
         self.PropertiesWidget.hide()
@@ -31,7 +31,7 @@ class lsst_explorer(QWidget, Ui_lsst_explorer):
             self.displayLsstExposure(exposure)
         except:
             pass
-        
+
         if self.catalogType:
             try:
                 catalog = self.butler.get(self.catalogType, self.dataId)

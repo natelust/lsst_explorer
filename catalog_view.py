@@ -1,6 +1,7 @@
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 import re
+from .catalog_plotter import LsstCatalogPlotter
 
 class LsstQtable(QAbstractTableModel):
     def __init__(self, catalog, parent=None):
@@ -36,6 +37,7 @@ class LsstQtable(QAbstractTableModel):
 class catalog_view(QDialog):
     def __init__(self, catalog, main, hasImage=False, parent=None):
         QDialog.__init__(self)
+        self.setPalette(main.palette())
         self.setModal(False)
         self.catalog = catalog
         self.main = main
@@ -66,11 +68,21 @@ class catalog_view(QDialog):
         self.scroller.setWidget(self.checkboxWidget)
         self.scroller.setWidgetResizable(True)
 
+        # Create the plotting box widget
+        self.lsstPlotter = LsstCatalogPlotter(self.catalog, self)
+        # Create a container widget for horizontal layout
+        self.checkBoxAndPlotter = QWidget()
+        self.checkBoxAndPlotterLayout = QHBoxLayout()
+        self.checkBoxAndPlotterLayout.addWidget(self.scroller)
+        self.checkBoxAndPlotterLayout.addWidget(self.lsstPlotter)
+        self.checkBoxAndPlotter.setLayout(self.checkBoxAndPlotterLayout)
+
         self.inputWidget = QWidget()
         inputLayout = QHBoxLayout(self)
         self.lineLabel = QLabel("Jump to row")
         self.lineNumber = QLineEdit()
         self.lineButton = QPushButton()
+        self.lineButton.setAutoDefault(False)
         self.lineButton.clicked.connect(self.goto)
         self.lineButton.setText('Go')
         inputLayout.addWidget(self.lineLabel)
@@ -83,6 +95,7 @@ class catalog_view(QDialog):
               " will fail if no unique record found"
         self.selectLabel = QLabel(msg)
         self.selectButton = QPushButton("Go")
+        self.selectButton.setAutoDefault(False)
         self.selectWidthLabel = QLabel("Enter width in pixels to concider")
         self.selectLineEdit = QLineEdit("5")
         selectLayout = QVBoxLayout(self)
@@ -95,7 +108,7 @@ class catalog_view(QDialog):
 
         layout = QVBoxLayout(self)
         layout.addWidget(self.tableView)
-        layout.addWidget(self.scroller)
+        layout.addWidget(self.checkBoxAndPlotter)
         layout.addWidget(self.inputWidget)
         layout.addWidget(self.selectWidget)
         self.setLayout(layout)
